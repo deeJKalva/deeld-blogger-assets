@@ -1,6 +1,14 @@
 (function () {
   const isMobile = () => window.innerWidth <= 768;
 
+  // Avoid audio play error if src is not ready
+  const safePlay = () => {
+    const audio = document.getElementById("bgMusic");
+    if (audio && audio.src && !audio.paused) {
+      audio.play().catch(() => {}); // prevent NotSupportedError
+    }
+  };
+
   function closeAllSubmenus(context = document) {
     context.querySelectorAll(".submenu.open").forEach(sub => sub.classList.remove("open"));
   }
@@ -9,21 +17,23 @@
     e.preventDefault();
     const isOpen = submenu.classList.contains("open");
 
-    // Close all siblings' submenus
+    // Close all siblings' submenus at the same level
     closeAllSubmenus(submenu.parentElement.parentElement);
 
     if (!isOpen) {
       submenu.classList.add("open");
     }
+
+    safePlay(); // optional safeguard if music is paused/playing
   }
 
-  function setupMenuLogic() {
+  function setupMobileMenu() {
     const menuToggle = document.getElementById("hamburger");
     const mainMenu = document.getElementById("mainMenu");
 
     menuToggle.addEventListener("click", () => {
-      const isMenuOpen = mainMenu.classList.toggle("active");
-      menuToggle.textContent = isMenuOpen ? "←" : "MENU";
+      const isOpen = mainMenu.classList.toggle("active");
+      menuToggle.textContent = isOpen ? "←" : "MENU";
     });
 
     mainMenu.addEventListener("click", (e) => {
@@ -41,10 +51,15 @@
         closeAllSubmenus();
       }
     });
+
+    window.addEventListener("beforeunload", () => {
+      mainMenu.classList.remove("active");
+      menuToggle.textContent = "MENU";
+      closeAllSubmenus();
+    });
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    if (isMobile()) setupMenuLogic();
+    if (isMobile()) setupMobileMenu();
   });
-
 })();
