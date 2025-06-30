@@ -71,7 +71,9 @@
   function setTrack(index) {
     const track = playlist[index];
     audio.src = track.url;
-    audio.play();
+    audio.volume = 0.7;
+    audio.muted = true; // <-- Autoplay safe
+    audio.play().catch(err => console.warn("Autoplay blocked:", err));
     updateLyrics(track.lyrics || []);
     updateVisualTheme(track.group);
   }
@@ -87,6 +89,7 @@
     const li = document.createElement("li");
     li.textContent = song.name;
     li.onclick = function () {
+      audio.muted = false;
       setTrack(index);
     };
     playlistList.appendChild(li);
@@ -95,6 +98,22 @@
   volumeControl.addEventListener("input", function () {
     audio.volume = volumeControl.value;
   });
+
+  // Unmute on any click interaction
+  document.addEventListener("click", function unmuteOnce() {
+    audio.muted = false;
+    document.removeEventListener("click", unmuteOnce);
+  });
+
+  // Optional: show toast reminder
+  const toast = document.createElement("div");
+  toast.textContent = "🔊 Tap anywhere to unmute music";
+  toast.style.cssText = "position:fixed;bottom:2em;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:0.5em 1em;border-radius:5px;z-index:999;";
+  document.body.appendChild(toast);
+
+  document.addEventListener("click", () => {
+    toast.remove();
+  }, { once: true });
 
   autoplayIfHome();
 })();
